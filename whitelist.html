@@ -1,0 +1,39 @@
+<div class="caja1" id="pageWhitelist">
+    <div class="card2" style="text-align:center">
+        <h1>Lista Blanca</h1>
+        <button onclick="modalWLInsert()" class="ctrlgrn" id="btnCreateWL">Registrar en Lista Blanca</button>
+        <hr>
+    </div>
+    <button onclick="refreshWL()" id="btnRefreshWL" class="ctrlyel fa fa-refresh"></button>
+    <table id="tableWL">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Patente</th>
+                <th class="no-sort">Controles</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+<!-- Insertar -->
+<div id="wlinsert-overlay" onclick="closeModal('wlinsert')" class="mdl-overlay"></div>
+<div id="wlinsert-modal" class="mdl-content">
+    <h1>Ingresar a Lista Blanca</h1>
+    <form onsubmit="doInsertWL(event)" method="post" id="formInsertWL">
+        <input required type="text" name="patente" class="entrada" placeholder="ABCD12">
+        <button class="btn" name="btnSubmit"><i class="fa fa-floppy-o"></i> Guardar</button>
+    </form>
+</div>
+<!-- Modificar -->
+<div id="wlupdate-overlay" onclick="closeModal('wlupdate')" class="mdl-overlay"></div>
+<div id="wlupdate-modal" class="mdl-content">
+    <h1>Modificar Entrada</h1>
+    <form onsubmit="doUpdateWL(event)" method="post" id="formUpdateWL">
+        <input type="hidden" name="idwl">
+        <input required type="text" name="patente" class="entrada" placeholder="ABCD12">
+        <button class="btn" name="btnSubmit"><i class="fa fa-floppy-o"></i> Guardar</button>
+    </form>
+</div>
+<script src="js/Data/wlDA.js"></script>
+<script src="js/wlUI.js"></script>

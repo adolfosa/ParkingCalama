@@ -1,0 +1,41 @@
+<div class="caja1" id="pageDestinos">
+    <div class="card" style="text-align:center">
+        <h1>Destinos</h1>
+        <button onclick="modalDestInsert()" class="ctrlgrn" id="btnCreateDest">Crear Destino</button>
+        <hr>
+    </div>
+    <button onclick="refreshDest()" class="ctrlyel fa fa-refresh" id="btnRefreshDest"></button>
+    <table id="tabelDest">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Patente</th>
+                <th>Valor</th>
+                <th class="no-sort">Controles</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+<!-- Insertar -->
+<div id="destinsert-overlay" onclick="closeModal('destinsert')" class="mdl-overlay"></div>
+<div id="destinsert-modal" class="mdl-content">
+    <h1>Ingresar Destino</h1>
+    <form onsubmit="doInsertDest(event)" method="POST" id="formInsertDest">
+        <input required type="text" name="ciudad" class="entrada" placeholder="Ciudad">
+        <input required type="number" name="valor" class="entrada" placeholder="0">
+        <button class="btn" name="btnSubmit"><i class="fa fa-floppy-o"></i> Guardar</button>
+    </form>
+</div>
+<!-- Modificar -->
+<div id="destupdate-overlay" onclick="closeModal('destupdate')" class="mdl-overlay"></div>
+<div id="destupdate-modal" class="mdl-content">
+    <h1>Modificar Destino</h1>
+    <form onsubmit="doUpdateDest(event)" method="POST" id="formUpdateDest">
+        <input type="hidden" name="iddest">
+        <input required type="text" name="ciudad" class="entrada" placeholder="Ciudad">
+        <input required type="number" name="valor" class="entrada" placeholder="0">
+        <button class="btn" name="btnSubmit"><i class="fa fa-floppy-o"></i> Guardar</button>
+    </form>
+</div>
+<script src="js/Data/destDA.js"></script>
+<script src="js/destUI.js"></script>
