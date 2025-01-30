@@ -28,7 +28,27 @@ async function calcParking(){
 
                 const ret = await getWLByPatente(data['patente']);
 
-                let valorTot = 20*minutos;
+                // Obtener tarifa desde la API con JWT
+                let valorMinuto = 5; // Valor por defecto en caso de error
+                try {
+                    const jwt = getCookie('jwt'); // Obtener el token JWT desde la cookie
+                    const tarifaResp = await fetch(`http://localhost/parkingCalama/php/tarifas/api.php?tipo=Parking`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${jwt}`, // Enviar el JWT en la cabecera
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const tarifaData = await tarifaResp.json();
+                    if (tarifaResp.ok && tarifaData.valor_minuto) {
+                        valorMinuto = tarifaData.valor_minuto;
+                    }
+                } catch (error) {
+                    console.error('Error obteniendo tarifa:', error);
+                }
+
+                let valorTot = valorMinuto * minutos;
                 if (ret !== null) {
                     valorTot = 0;
                 }
@@ -37,9 +57,8 @@ async function calcParking(){
                 empPat.textContent = `Empresa: ${data['empresa']}`;
                 fechaPat.textContent = `Fecha: ${data['fechaent']}`;
                 horaentPat.textContent = `Hora Ingreso: ${data['horaent']}`;
-                horasalPat.textContent = 'Hora salida: '+date.getHours()+':'+date.getMinutes()+':'+date.getSeconds() ;
+                horasalPat.textContent = 'Hora salida: '+date.getHours()+':'+date.getMinutes()+':'+date.getSeconds();
                 tiempPat.textContent = `Tiempo de Parking: ${minutos} min.`;
-                // To-Do: Traer valor x minuto desde la BDD
                 valPat.textContent = `Valor: $${valorTot}`;
                 
                 cont.append(elemPat, empPat, fechaPat, horaentPat, horasalPat, tiempPat, valPat);
@@ -67,6 +86,7 @@ async function calcParking(){
         console.error('Error:', error.message);
     }
 }
+
 
 async function getMovByPatente(patente){
     if(getCookie('jwt')){
