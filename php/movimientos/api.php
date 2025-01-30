@@ -20,7 +20,7 @@ include("../conf.php");
 
 include('../auth.php');
 
-// Get
+// GET
 if($_SERVER['REQUEST_METHOD'] == 'GET') {
     if($token->nivel < $LVLUSER){
         header('HTTP/1.1 401 Unauthorized'); // Devolver un código de error de autorización si el token no es válido
@@ -30,9 +30,8 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') {
 
     if(isset($_GET['patente'])){
         $patente = str_replace('-','',$_GET['patente']);
-        $date = date('Y-m-d');
-        $stmt = $conn->prepare("SELECT m.idmov, m.fechaent, m.horaent, m.fechasal, m.horasal, m.patente, e.nombre AS empresa, m.tipo, m.valor FROM movParking as m JOIN empParking as e ON m.empresa = e.idemp WHERE m.patente = ? AND m.fechaent = ? ORDER BY m.idmov DESC");
-        $stmt->bind_param("ss",$patente, $date);
+        $stmt = $conn->prepare("SELECT m.idmov, m.fechaent, m.horaent, m.fechasal, m.horasal, m.patente, e.nombre AS empresa, m.tipo, m.valor FROM movParking as m JOIN empParking as e ON m.empresa = e.idemp WHERE m.patente = ? ORDER BY m.idmov DESC");
+        $stmt->bind_param("s", $patente);
     
         try {
             $stmt->execute();
@@ -42,46 +41,39 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') {
             echo json_encode($datos);
         } catch (mysqli_sql_exception $e) {
             echo json_encode(['error' => mysqli_errno($conn)]);
-        } catch (Excepttion $e) {
-            echo json_encode(['error' => $e]);
+        } catch (Exception $e) {
+            echo json_encode(['error' => $e->getMessage()]);
         }
     } else if(isset($_GET['id'])){
         $id = $_GET['id'];
-        $date = date('Y-m-d');
-        $stmt = $conn->prepare("SELECT m.idmov, m.fechaent, m.horaent, m.fechasal, m.horasal, m.patente, e.nombre AS empresa, m.tipo, m.valor FROM movParking as m JOIN empParking as e ON m.empresa = e.idemp WHERE m.idmov = ? AND m.fechaent = ?");
-        $stmt->bind_param("is",$id,$date);
+        $stmt = $conn->prepare("SELECT m.idmov, m.fechaent, m.horaent, m.fechasal, m.horasal, m.patente, e.nombre AS empresa, m.tipo, m.valor FROM movParking as m JOIN empParking as e ON m.empresa = e.idemp WHERE m.idmov = ? ORDER BY m.idmov");
+        $stmt->bind_param("i", $id);
     
         try {
             $stmt->execute();
-    
             $result = $stmt->get_result();
-    
             $datos = $result->fetch_assoc();
-    
             echo json_encode($datos);
         } catch (mysqli_sql_exception $e) {
             echo json_encode(['error' => mysqli_errno($conn)]);
-        } catch (Excepttion $e) {
-            echo json_encode(['error' => $e]);
+        } catch (Exception $e) {
+            echo json_encode(['error' => $e->getMessage()]);
         }
     } else {
-        $date = date('Y-m-d');
-        $stmt = $conn->prepare("SELECT m.idmov, m.fechaent, m.horaent, m.fechasal, m.horasal, m.patente, e.nombre AS empresa, m.tipo, m.valor FROM movParking as m JOIN empParking as e ON m.empresa = e.idemp WHERE m.fechaent = ? ORDER BY m.idmov");
-        $stmt->bind_param("s",$date);
-    
+        $stmt = $conn->prepare("SELECT m.idmov, m.fechaent, m.horaent, m.fechasal, m.horasal, m.patente, e.nombre AS empresa, m.tipo, m.valor FROM movParking as m JOIN empParking as e ON m.empresa = e.idemp ORDER BY m.idmov");
         try {
             $stmt->execute();
             $result = $stmt->get_result();
             $datos = $result->fetch_all(MYSQLI_ASSOC);
-    
             echo json_encode($datos);
         } catch (mysqli_sql_exception $e) {
             echo json_encode(['error' => mysqli_errno($conn)]);
-        } catch (Excepttion $e) {
-            echo json_encode(['error' => $e]);
+        } catch (Exception $e) {
+            echo json_encode(['error' => $e->getMessage()]);
         }
     }
 }
+
 // Insert
 else if($_SERVER['REQUEST_METHOD'] == 'POST') {
     if($token->nivel < $LVLUSER){
