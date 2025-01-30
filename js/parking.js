@@ -2,82 +2,89 @@ async function calcParking() {
     var input = document.getElementById('parkingQRPat').value;
     var cont = document.getElementById('contParking');
 
-    if(!patRegEx.test(input)){
+    if (!patRegEx.test(input)) {
         console.log('No es patente, leer QR');
-        return; //To-Do leer QR o Codigo de Barra
+        return;
     }
-    
+
     try {
         const data = await getMovByPatente(input);
-
-        if(!data) {
+        if (!data) {
             alert('Patente no encontrada');
             return;
         }
 
-        if(data['tipo'] === 'Parking') {
-            if(data['fechasal'] === "0000-00-00") {
-                cont.textContent = '';
-                const date = new Date();
-                
-                var fechaent = new Date(data['fechaent']+'T'+data['horaent']);
-                var differencia = (date.getTime() - fechaent.getTime()) / 1000;
-                var minutos = Math.ceil(differencia / 60);
+        if (data['tipo'] === 'Parking' && data['fechasal'] === "0000-00-00") {
+            cont.textContent = '';
+            const now = new Date();
+            const fechaEnt = new Date(data['fechaent'] + 'T' + data['horaent']);
 
-                const [elemPat, fechaPat, horaentPat, horasalPat, tiempPat, valPat, empPat] =
-                    ['h1', 'h3', 'h3', 'h3', 'h3', 'h3', 'h4'].map(tag => document.createElement(tag));
+            let minutosCobrar = 0;
 
-                const ret = await getWLByPatente(data['patente']);
+            // Normalizar fechas (eliminar segundos)
+            const fechaIngreso = new Date(fechaEnt.setSeconds(0));
+            const fechaSalida = new Date(now.setSeconds(0));
 
-                // Obtener tarifa desde la API con JWT
-                let valorMinuto = 20; // Valor por defecto en caso de error
-                try {
-                    const jwt = getCookie('jwt'); // Obtener el token JWT desde la cookie
-                    const tarifaResp = await fetch(`http://localhost/parkingCalama/php/tarifas/api.php?tipo=Parking`, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${jwt}`, // Enviar el JWT en la cabecera
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                    const tarifaData = await tarifaResp.json();
-                    if (tarifaResp.ok && tarifaData.valor_minuto) {
-                        valorMinuto = tarifaData.valor_minuto;
-                    }
-                } catch (error) {
-                    console.error('Error obteniendo tarifa:', error);
-                }
-
-                let valorTot = valorMinuto * minutos;
-                if (ret !== null) {
-                    valorTot = 0;
-                }
-
-                elemPat.textContent = `Patente: ${data['patente']}`;
-                empPat.textContent = `Empresa: ${data['empresa']}`;
-                fechaPat.textContent = `Fecha: ${data['fechaent']}`;
-                horaentPat.textContent = `Hora Ingreso: ${data['horaent']}`;
-                horasalPat.textContent = 'Hora salida: '+date.getHours()+':'+date.getMinutes()+':'+date.getSeconds();
-                tiempPat.textContent = `Tiempo de Parking: ${minutos} min.`;
-                valPat.textContent = `Valor: $${valorTot}`;
-                
-                cont.append(elemPat, empPat, fechaPat, horaentPat, horasalPat, tiempPat, valPat);
-
-                // Guardar los datos en una variable global para usarlos después en el registro del pago
-                window.datosParking = {
-                    id: data['idmov'],
-                    fecha: date.toISOString().split('T')[0],
-                    hora: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
-                    valor: valorTot,
-                };
-
+            if (fechaIngreso.toDateString() === fechaSalida.toDateString()) {
+                let minutosTotales = Math.ceil((fechaSalida - fechaIngreso) / 60000);
+                minutosCobrar = Math.min(minutosTotales, 480);
             } else {
-                alert('Esta patente ya fue cobrada');
+                let minutosTotales = Math.ceil((fechaSalida - fechaIngreso) / 60000);
+                let diasCompletos = Math.floor(minutosTotales / 1440);
+                let minutosRestantes = minutosTotales % 1440;
+                
+                minutosCobrar += diasCompletos * 480;
+                minutosCobrar += Math.min(minutosRestantes, 480);
             }
+
+            let valorMinuto = 20;
+            try {
+                const jwt = getCookie('jwt');
+                const tarifaResp = await fetch(`http://localhost/parkingCalama/php/tarifas/api.php?tipo=Parking`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${jwt}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const tarifaData = await tarifaResp.json();
+                if (tarifaResp.ok && tarifaData.valor_minuto) {
+                    valorMinuto = tarifaData.valor_minuto;
+                }
+            } catch (error) {
+                console.error('Error obteniendo tarifa:', error);
+            }
+
+            let valorTotal = valorMinuto * minutosCobrar;
+
+            const ret = await getWLByPatente(data['patente']);
+            if (ret !== null) {
+                valorTotal = 0;
+            }
+
+            const [elemPat, empPat, fechaPat, horaentPat, horasalPat, tiempPat, valPat] =
+                ['h1', 'h4', 'h3', 'h3', 'h3', 'h3', 'h3'].map(tag => document.createElement(tag));
+
+            elemPat.textContent = `Patente: ${data['patente']}`;
+            empPat.textContent = `Empresa: ${data['empresa']}`;
+            fechaPat.textContent = `Fecha: ${data['fechaent']}`;
+            horaentPat.textContent = `Hora Ingreso: ${data['horaent']}`;
+            horasalPat.textContent = `Hora salida: ${fechaSalida.getHours()}:${fechaSalida.getMinutes()}:${fechaSalida.getSeconds()}`;
+            tiempPat.textContent = `Tiempo de Parking: ${minutosCobrar} min.`;
+            valPat.textContent = `Valor: $${valorTotal}`;
+
+            cont.append(elemPat, empPat, fechaPat, horaentPat, horasalPat, tiempPat, valPat);
+
+            window.datosParking = {
+                id: data['idmov'],
+                fecha: fechaSalida.toISOString().split('T')[0],
+                hora: `${fechaSalida.getHours()}:${fechaSalida.getMinutes()}:${fechaSalida.getSeconds()}`,
+                valor: valorTotal,
+            };
+
         } else {
-            buses();
-            document.getElementById('andenQRPat').value = input;
+            alert('Esta patente ya fue cobrada');
         }
     } catch (error) {
         console.error('Error:', error.message);
