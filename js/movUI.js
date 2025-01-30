@@ -85,11 +85,12 @@ async function doInsertMov(e){
     datos = {
         fecha: dateNow.toISOString().split('T')[0],
         hora: `${dateNow.getHours()}:${dateNow.getMinutes()}:${dateNow.getSeconds()}`,
-        patente: form.patente.value,
+        patente: form.patente.value,   // No se verifica si ya existe, se registra directamente
         empresa: form.empresa.value,
         tipo: form.tipo.value
     };
 
+    // Aquí puedes enviar los datos sin preocuparte de la patente duplicada
     let ret = await insertMov(datos);
     if(ret['error']){
         alert(ret['error']);

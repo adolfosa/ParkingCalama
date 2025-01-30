@@ -101,28 +101,25 @@ else if($_SERVER['REQUEST_METHOD'] == 'POST') {
         $empresa = $data['empresa'];
         $tipo = $data['tipo'];
 
-        $chck = $conn->prepare("SELECT idmov FROM movParking WHERE patente = ? AND fechasal = '0000-00-00'");
-        $chck->bind_param("s",$patente);
-        $chck->execute();
-        $result = $chck->get_result();
+        // Se elimina la verificación de si la patente ya existe
+        // Antes había un chequeo para ver si la patente estaba en un movimiento sin fecha de salida
+        // El nuevo enfoque es permitir que se inserten múltiples movimientos con la misma patente
 
-        if($result->num_rows == 0){
-            $stmt = $conn->prepare("INSERT INTO movParking (fechaent, horaent, patente, empresa, tipo, fechasal, horasal) VALUES (?,?,?,?,?,'0','0')");
-            $stmt->bind_param("sssis",$fecha,$hora,$patente,$empresa,$tipo);
+        $stmt = $conn->prepare("INSERT INTO movParking (fechaent, horaent, patente, empresa, tipo, fechasal, horasal) VALUES (?,?,?,?,?,'0','0')");
+        $stmt->bind_param("sssis", $fecha, $hora, $patente, $empresa, $tipo);
 
-            if($stmt->execute()){
-                $id = $conn->insert_id;
-                echo json_encode(['id' => $id, 'msg' => 'Insertado correctamente']);
-            } else {
-                echo json_encode(['error' => $conn->error]);
-            }
+        if($stmt->execute()){
+            $id = $conn->insert_id;
+            echo json_encode(['id' => $id, 'msg' => 'Insertado correctamente']);
         } else {
-            echo json_encode(['error' => 'Ya existe registro!']);
+            echo json_encode(['error' => $conn->error]);
         }
+
     } else {
         echo json_encode(['error' => 'Error al decodificar JSON']);
     }
 }
+
 // Update (Pagado)
 else if($_SERVER['REQUEST_METHOD'] == 'PUT') {
     if($token->nivel < $LVLUSER){
@@ -132,20 +129,71 @@ else if($_SERVER['REQUEST_METHOD'] == 'PUT') {
     }
 
     $json_data = file_get_contents("php://input");
-
     $data = json_decode($json_data, true);
 
     if ($data !== null) {
-        $fecha = $data['fecha'];
-        $hora = $data['hora'];
-        $valor = $data['valor'];
+        $fecha_salida = $data['fecha'];
+        $hora_salida = $data['hora'];
         $id = $data['id'];
 
+        // Obtener los datos de entrada del vehículo
+        $stmt = $conn->prepare("SELECT fechaent, horaent FROM movParking WHERE idmov = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $registro = $result->fetch_assoc();
+
+        if (!$registro) {
+            echo json_encode(['error' => 'Registro no encontrado']);
+            exit;
+        }
+
+        $fecha_ent = $registro['fechaent'];
+        $hora_ent = $registro['horaent'];
+
+        // Convertir fechas y horas a objetos DateTime
+        $entrada = new DateTime("$fecha_ent $hora_ent");
+        $salida = new DateTime("$fecha_salida $hora_salida");
+
+        // Verificar que la salida sea posterior a la entrada
+        if ($salida <= $entrada) {
+            echo json_encode(['error' => 'La fecha y hora de salida no pueden ser anteriores a la entrada']);
+            exit;
+        }
+
+        // Calcular la diferencia total en minutos
+        $intervalo = $entrada->diff($salida);
+        $total_minutos = ($intervalo->days * 1440) + ($intervalo->h * 60) + $intervalo->i;
+
+        // Aplicar reglas de negocio
+        $minutos_cobrados = 0;
+        $costo_por_minuto = 20; // Puedes ajustar este valor según lo requerido
+        $tope_diario = 480;
+
+        // Calcular minutos y costo por cada día
+        while ($entrada->format('Y-m-d') < $salida->format('Y-m-d')) {
+            $minutos_cobrados += min($tope_diario, 1440); // Días completos: máximo 480 minutos
+            $entrada->modify('+1 day')->setTime(0, 0);
+        }
+
+        // Calcular minutos del día de salida
+        $minutos_restantes = ($salida->format('U') - $entrada->format('U')) / 60; // Diferencia en minutos
+        $minutos_cobrados += min($tope_diario, round($minutos_restantes));
+
+        // Calcular costo total
+        $costo_total = $minutos_cobrados * $costo_por_minuto;
+
+        // Actualizar la base de datos
         $stmt = $conn->prepare("UPDATE movParking SET fechasal = ?, horasal = ?, valor = ? WHERE idmov = ?");
-        $stmt->bind_param("ssii",$fecha,$hora,$valor,$id);
+        $stmt->bind_param("ssii", $fecha_salida, $hora_salida, $costo_total, $id);
 
         if($stmt->execute()) {
-            echo json_encode(['id' => $id, 'msg' => 'Actualizado correctamente']);
+            echo json_encode([
+                'id' => $id,
+                'minutos_cobrados' => $minutos_cobrados,
+                'costo_total' => $costo_total,
+                'msg' => 'Actualizado correctamente'
+            ]);
         } else {
             echo json_encode(['error' => 'Error al actualizar']);
         }
