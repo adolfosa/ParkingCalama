@@ -1,4 +1,4 @@
-async function calcParking(){
+async function calcParking() {
     var input = document.getElementById('parkingQRPat').value;
     var cont = document.getElementById('contParking');
 
@@ -6,6 +6,7 @@ async function calcParking(){
         console.log('No es patente, leer QR');
         return; //To-Do leer QR o Codigo de Barra
     }
+    
     try {
         const data = await getMovByPatente(input);
 
@@ -63,18 +64,14 @@ async function calcParking(){
                 
                 cont.append(elemPat, empPat, fechaPat, horaentPat, horasalPat, tiempPat, valPat);
 
-                datos = {
+                // Guardar los datos en una variable global para usarlos después en el registro del pago
+                window.datosParking = {
                     id: data['idmov'],
                     fecha: date.toISOString().split('T')[0],
                     hora: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
                     valor: valorTot,
                 };
 
-                await updateMov(datos);
-                refreshMov();
-                refreshPagos();
-                alert('Pago registrado!');
-                document.getElementById('parkingQRPat').value = '';
             } else {
                 alert('Esta patente ya fue cobrada');
             }
@@ -86,6 +83,28 @@ async function calcParking(){
         console.error('Error:', error.message);
     }
 }
+
+async function registrarPago() {
+    // Asegúrate de que los datos hayan sido obtenidos previamente con la función de consulta
+    if (!window.datosParking) {
+        alert('Por favor, realiza la consulta del estacionamiento primero');
+        return;
+    }
+
+    const datos = window.datosParking;
+    
+    try {
+        await updateMov(datos);
+        refreshMov();
+        refreshPagos();
+        alert('Pago registrado!');
+        document.getElementById('parkingQRPat').value = ''; // Limpiar el campo del QR
+        window.datosParking = null; // Limpiar los datos después de registrar el pago
+    } catch (error) {
+        console.error('Error al registrar el pago:', error.message);
+    }
+}
+
 
 
 async function getMovByPatente(patente){
