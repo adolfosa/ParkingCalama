@@ -29,7 +29,7 @@ async function calcParking(){
                 const ret = await getWLByPatente(data['patente']);
 
                 // Obtener tarifa desde la API con JWT
-                let valorMinuto = 5; // Valor por defecto en caso de error
+                let valorMinuto = 20; // Valor por defecto en caso de error
                 try {
                     const jwt = getCookie('jwt'); // Obtener el token JWT desde la cookie
                     const tarifaResp = await fetch(`http://localhost/parkingCalama/php/tarifas/api.php?tipo=Parking`, {
