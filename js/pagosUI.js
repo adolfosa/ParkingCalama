@@ -7,6 +7,7 @@ var tablePagos = $('#tablePagos').DataTable({
     }],
     columns: [
         { data: 'idmov'},
+        { data: 'fecha'},
         { data: 'tiempo'},
         { data: 'patente'},
         { data: 'empresa'},
@@ -14,6 +15,16 @@ var tablePagos = $('#tablePagos').DataTable({
         { data: 'valor'}
     ]
 });
+
+let fechaSeleccionada = new Date().toISOString().split('T')[0]; // Fecha actual por defecto
+
+// Función para cambiar la fecha seleccionada
+function cambiarFecha() {
+    const selectorFecha = document.getElementById('fechaSelector');
+    fechaSeleccionada = selectorFecha.value; // Actualizar la fecha seleccionada
+    refreshPagos(); // Refrescar la tabla con la nueva fecha
+}
+
 
 async function refreshPagos(){
     if(getCookie('jwt')){
@@ -27,15 +38,18 @@ async function refreshPagos(){
 
         if(data){
             tablePagos.clear();
+            
             data.forEach(item => {
-                if(item['fechasal']&&item['fechasal']!="0000-00-00"){
+                if(item['fechasal'] && item['fechasal'] !== "0000-00-00" && item['fechasal'] === fechaSeleccionada){
                     var fechaent = new Date(item['fechaent']+'T'+item['horaent']);
                     var fechasal = new Date(item['fechasal']+'T'+item['horasal']);
                     var differencia = (fechasal.getTime() - fechaent.getTime()) / 1000;
                     var minutos = Math.ceil(differencia / 60);
-                    if(item['tipo']==='Anden') { minutos = Math.ceil((differencia / 60) / 25)*25; }
+                    if(item['tipo'] === 'Anden') { minutos = Math.ceil((differencia / 60) / 25) * 25; }
+
                     tablePagos.rows.add([{
                         'idmov' : item['idmov'],
+                        'fecha' : item['fechasal'],
                         'tiempo' : minutos+' min.',
                         'patente' : item['patente'],
                         'empresa' : item['empresa'],
@@ -44,14 +58,17 @@ async function refreshPagos(){
                     }]);
                 }
             });
+
             tablePagos.draw();
         }
+
         refreshBtn.disabled = false;
         refreshBtn.classList.add('fa-refresh');
         refreshBtn.classList.remove('fa-hourglass');
         refreshBtn.classList.remove('disabled');
     }
 }
+
 
 async function impPagos() {
     const ventanaImpr = window.open('', '_blank');
@@ -67,6 +84,7 @@ async function impPagos() {
             <table style="margin:auto;border:1px solid black;border-collapse:collapse">
                 <thead>
                     <tr>
+                        <th>Fecha</th>
                         <th>Tiempo</th>
                         <th>Patente</th>
                         <th>Empresa</th>
