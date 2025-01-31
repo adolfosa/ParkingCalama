@@ -3,12 +3,15 @@
     <h1>Pagos del Día</h1>
     <button class="ctrlgrn" onclick="impPagos()">Imprimir</button>
     <hr>
+    <input type="date" id="fechaSelector" value="">
+    <button class="ctrlyel1" onclick="cambiarFecha()">Cambiar Fecha</button>
   </div>
   <button id="btnRefreshPagos" class="ctrlyel fa fa-refresh" onclick="refreshPagos()"></button>
   <table id="tablePagos">
     <thead>
       <tr>
         <th>ID</th>
+        <th>Fecha</th>
         <th>Tiempo</th>
         <th>Patente</th>
         <th>Empresa</th>
