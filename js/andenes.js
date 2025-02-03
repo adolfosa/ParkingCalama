@@ -1,19 +1,23 @@
 async function calcAndenes() {
+    // Obtiene el valor ingresado en el input del código QR o patente
     const input = document.getElementById('andenQRPat').value;
     const cont = document.getElementById('contAnden');
     const dest = document.getElementById('destinoBuses');
 
+    // Verifica si se ha seleccionado un destino válido
     if (!(dest.value > 0)) {
         alert('Seleccione Empresa y Destino');
         return;
     }
 
+    // Verifica si el input cumple con el formato de patente
     if (!patRegEx.test(input)) {
         console.log('No es patente, leer QR');
-        return;
+        return; // Aquí se podría implementar la lectura del QR o código de barras
     }
 
     try {
+        // Obtiene datos del movimiento de la patente
         const data = await getMovByPatente(input);
 
         if (!data) {
@@ -21,26 +25,32 @@ async function calcAndenes() {
             return;
         }
 
+        // Si el tipo de movimiento es "Anden"
         if (data['tipo'] === 'Anden') {
+            // Verifica si el vehículo ya ha salido
             if (data['fechasal'] === "0000-00-00") {
                 cont.textContent = '';
                 const date = new Date();
 
+                // Calcula la diferencia de tiempo desde la entrada
                 const fechaent = new Date(`${data['fechaent']}T${data['horaent']}`);
                 const diferencia = (date.getTime() - fechaent.getTime()) / 1000;
                 const minutos = Math.ceil((diferencia / 60) / 25);
 
+                // Crea elementos HTML para mostrar la información
                 const [elemPat, fechaPat, horaentPat, horasalPat, tiempPat, valPat, empPat] =
                     ['h1', 'h3', 'h3', 'h3', 'h3', 'h3', 'h4'].map(tag => document.createElement(tag));
 
+                // Obtiene el valor del destino
                 const ret = await getWLByPatente(data['patente']);
                 const destInfo = await getDestByID(dest.value);
 
                 let valorTot = minutos * destInfo['valor'];
                 if (ret !== null) {
-                    valorTot = 0;
+                    valorTot = 0; // Si el vehículo está en lista blanca, el valor es 0
                 }
 
+                // Asigna valores a los elementos creados
                 elemPat.textContent = `Patente: ${data['patente']}`;
                 empPat.textContent = `Empresa: ${data['empresa']}`;
                 fechaPat.textContent = `Fecha: ${data['fechaent']}`;
@@ -49,19 +59,34 @@ async function calcAndenes() {
                 tiempPat.textContent = `Tiempo de Parking: ${minutos * 25} min.`;
                 valPat.textContent = `Valor: $${valorTot}`;
 
+                // Agrega los elementos al contenedor
                 cont.append(elemPat, empPat, fechaPat, horaentPat, horasalPat, tiempPat, valPat);
+
+                // Prepara los datos para actualizar el movimiento
+                const datos = {
+                    id: data['idmov'],
+                    fecha: date.toISOString().split('T')[0],
+                    hora: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
+                    valor: valorTot,
+                };
+
+                // Actualiza el movimiento y refresca la interfaz
+                await updateMov(datos);
+                refreshMov();
+                refreshPagos();
+                alert('Pago registrado!');
+                document.getElementById('andenQRPat').value = '';
             } else {
                 alert('Esta patente ya fue cobrada');
             }
         } else {
-            parking();
+            parking(); // Si no es un movimiento de "Anden", lo procesa como "Parking"
             document.getElementById('parkingQRPat').value = input;
         }
     } catch (error) {
         console.error('Error:', error.message);
     }
 }
-
 
 // Lista las empresas en un select
 function listarAndenesEmpresas() {
