@@ -104,7 +104,7 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') {
 }
 
 
-// Insert
+
 else if($_SERVER['REQUEST_METHOD'] == 'POST') {
     if($token->nivel < $LVLUSER){
         header('HTTP/1.1 401 Unauthorized'); // Devolver un código de error de autorización si el token no es válido
@@ -123,10 +123,7 @@ else if($_SERVER['REQUEST_METHOD'] == 'POST') {
         $empresa = $data['empresa'];
         $tipo = $data['tipo'];
 
-        // Se elimina la verificación de si la patente ya existe
-        // Antes había un chequeo para ver si la patente estaba en un movimiento sin fecha de salida
-        // El nuevo enfoque es permitir que se inserten múltiples movimientos con la misma patente
-
+        // Aquí insertamos la patente correctamente en la base de datos sin necesidad de verificar si ya existe
         $stmt = $conn->prepare("INSERT INTO movParking (fechaent, horaent, patente, empresa, tipo, fechasal, horasal) VALUES (?,?,?,?,?,'0','0')");
         $stmt->bind_param("sssis", $fecha, $hora, $patente, $empresa, $tipo);
 
@@ -141,6 +138,7 @@ else if($_SERVER['REQUEST_METHOD'] == 'POST') {
         echo json_encode(['error' => 'Error al decodificar JSON']);
     }
 }
+
 
 // Update (Pagado)
 else if($_SERVER['REQUEST_METHOD'] == 'PUT') {
