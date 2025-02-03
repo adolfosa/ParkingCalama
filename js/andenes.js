@@ -2,16 +2,15 @@ async function calcAndenes() {
     const input = document.getElementById('andenQRPat').value;
     const cont = document.getElementById('contAnden');
     const dest = document.getElementById('destinoBuses');
-    //const empr = document.getElementById('empresaBuses');
 
     if (!(dest.value > 0)) {
         alert('Seleccione Empresa y Destino');
         return;
     }
 
-    if(!patRegEx.test(input)){
+    if (!patRegEx.test(input)) {
         console.log('No es patente, leer QR');
-        return; //To-Do leer QR o Codigo de Barra
+        return;
     }
 
     try {
@@ -51,19 +50,6 @@ async function calcAndenes() {
                 valPat.textContent = `Valor: $${valorTot}`;
 
                 cont.append(elemPat, empPat, fechaPat, horaentPat, horasalPat, tiempPat, valPat);
-
-                const datos = {
-                    id: data['idmov'],
-                    fecha: date.toISOString().split('T')[0],
-                    hora: `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
-                    valor: valorTot,
-                };
-
-                await updateMov(datos);
-                refreshMov();
-                refreshPagos();
-                alert('Pago registrado!');
-                document.getElementById('andenQRPat').value = '';
             } else {
                 alert('Esta patente ya fue cobrada');
             }
@@ -76,10 +62,12 @@ async function calcAndenes() {
     }
 }
 
-function listarAndenesEmpresas(){
+
+// Lista las empresas en un select
+function listarAndenesEmpresas() {
     andGetEmpresas()
     .then(data => {
-        if(data){
+        if (data) {
             const lista = document.getElementById('empresaBuses');
             lista.textContent = '';
             let nullData = document.createElement('option');
@@ -96,10 +84,11 @@ function listarAndenesEmpresas(){
     });
 }
 
-function listarAndenesDestinos(){
+// Lista los destinos en un select
+function listarAndenesDestinos() {
     andGetDestinos()
     .then(data => {
-        if(data){
+        if (data) {
             const lista = document.getElementById('destinoBuses');
             lista.textContent = '';
             let nullData = document.createElement('option');
@@ -116,10 +105,10 @@ function listarAndenesDestinos(){
     });
 }
 
-async function andGetEmpresas(){
-    if(getCookie('jwt')){
-        // Función para obtener todas las empresas
-        let ret = await fetch(baseURL+"/empresas/get.php", {
+// Obtiene la lista de empresas desde la API
+async function andGetEmpresas() {
+    if (getCookie('jwt')) {
+        let ret = await fetch(baseURL + "/empresas/get.php", {
                 method: 'POST',
                 mode: 'cors',
                 headers: {
@@ -127,18 +116,14 @@ async function andGetEmpresas(){
                 }
             })
             .then(reply => reply.json())
-            .then(data => {
-                return data;
-            })
-            .catch(error => {
-                console.log(error);
-            });
+            .catch(error => console.log(error));
         return ret;
     }
 }
 
-async function andGetDestinos(){
-    if(getCookie('jwt')){
+// Obtiene la lista de destinos desde la API
+async function andGetDestinos() {
+    if (getCookie('jwt')) {
         let ret = await fetch(apiDestinos, {
                 method: 'GET',
                 mode: 'cors',
@@ -147,19 +132,14 @@ async function andGetDestinos(){
                 }
             })
             .then(reply => reply.json())
-            .then(data => {
-                return data;
-            })
-            .catch(error => {
-                console.log(error);
-            });
+            .catch(error => console.log(error));
         return ret;
     }
 }
 
-function impAnden(){
+// Función para imprimir la boleta del Andén
+function impAnden() {
     const ventanaImpr = window.open('', '_blank');
-
     const contBoleta = document.getElementById('contAnden');
 
     ventanaImpr.document.write('<html><head><title>Imprimir Boleta</title><link rel="stylesheet" href="css/styles.css"></head><body style="text-align:left; width: 640px;">');
