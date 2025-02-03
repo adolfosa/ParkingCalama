@@ -81,6 +81,90 @@ async function refreshMov(fecha = null){
     }
 }
 
+async function doInsertMov(e){
+    e.preventDefault();
+
+    const form = document.getElementById('formInsertMov');
+
+    if(!patRegEx.test(form.patente.value)) {
+        alert('Formatos de patente:\nABCD12\nABCD-12\nAB-CD-12');
+        return;
+    }
+
+    form.btnSubmit.disabled = true;
+    form.btnSubmit.classList.add('disabled');
+
+    const dateNow = new Date();
+
+    datos = {
+        fecha: dateNow.toISOString().split('T')[0],
+        hora: `${dateNow.getHours()}:${dateNow.getMinutes()}:${dateNow.getSeconds()}`,
+        patente: form.patente.value,   // No se verifica si ya existe, se registra directamente
+        empresa: form.empresa.value,
+        tipo: form.tipo.value
+    };
+
+    // Aquí puedes enviar los datos sin preocuparte de la patente duplicada
+    let ret = await insertMov(datos);
+    if(ret['error']){
+        alert(ret['error']);
+    } else {
+        closeModal('movinsert');
+    }
+    form.btnSubmit.disabled = false;
+    form.btnSubmit.classList.remove('disabled');
+    refreshMov();
+}
+
+async function impMovimientos() {
+    const ventanaImpr = window.open('', '_blank');
+
+    ventanaImpr.document.write(`
+        <html>
+        <head>
+            <title>Movimientos</title>
+            <link rel="stylesheet" href="css/styles.css">
+        </head>
+        <body style="text-align:center; width: 1280px;">
+            <h1>Movimientos del Día</h1>
+            <table style="margin:auto;border:1px solid black;border-collapse:collapse">
+                <thead>
+                    <tr>
+                        <th>Ingreso</th>
+                        <th>Salida</th>
+                        <th>Patente</th>
+                        <th>Empresa</th>
+                        <th>Tipo</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `);
+
+    try {
+        const data = await getMov();
+
+        if (data) {
+            data.forEach(itm => {
+                ventanaImpr.document.write(`
+                    <tr>
+                        <td style="padding:5px">${itm['horaent']}</td>
+                        <td style="padding:5px">${itm['horasal']}</td>
+                        <td style="padding:5px">${itm['patente']}</td>
+                        <td style="padding:5px">${itm['empresa']}</td>
+                        <td style="padding:5px">${itm['tipo']}</td>
+                    </tr>
+                `);
+            });
+
+            ventanaImpr.document.write('</tbody></table>');
+            ventanaImpr.document.close();
+            ventanaImpr.print();
+        }
+    } catch (error) {
+        console.error('Error:', error.message);
+    }
+}
+
 async function getMov(fecha = null) {
     let url = apiMovimientos;
     if (fecha) {
