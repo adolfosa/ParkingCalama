@@ -21,12 +21,13 @@
 <!-- Barra de navegación -->
 <div id="navbar">
   <div id="logo">Logo</div>
-  <!-- Enlaces a secciones del sitio -->
   <a href="#" onclick="contacto()">Contáctenos</a>
   <a href="#" onclick="nosotros()">Nosotros</a>
   <a href="#" id="nbUsrParking" onclick="parking()">Parking</a>
   <a href="#" id="nbUsrbuses" onclick="buses()">Andenes</a>
+  <a href="#" id="nbPrivilegios" onclick="privilegios()">Privilegios</a> <!-- Nuevo botón -->
 </div>
+
 
 <!-- Barra lateral -->
 <div id="sidebar">
@@ -59,6 +60,7 @@
     <div id="contenedorParking"></div>
     <div id="contenedorNosotros"></div>
     <div id="contenedorContacto"></div>
+    <div id="contenedorPrivilegios"></div>
     <div id="contenedorMovimientos"></div>
     <div id="contenedorEmpresas"></div>
     <div id="contenedorDestinos"></div>
@@ -155,22 +157,22 @@
       content.style.marginLeft = '200px';
     }
   });
-
-  // Generar una promesa luego de cargar todos los elementos
+  
   var loadPage = $.Deferred(function(dfd) {
-    $('#contenedorMovimientos').load('movimientos.html');
-    $('#contenedorPagos').load('pagos.html');
-    $('#contenedorContacto').load('contacto.html');
-    $('#contenedorParking').load('parking.html');
-    $('#contenedorBuses').load('buses.html');
-    $('#contenedorNosotros').load('nosotros.html');
-    $('#contenedorModal').load('modal.html');
-    $('#contenedorWhitelist').load('whitelist.html');
-    $('#contenedorEmpresas').load('empresas.html');
-    $('#contenedorDestinos').load('destinos.html');
-    $('#contenedorConfig').load('config.html');
-    $('#contenedorEnrolar').load('enroll.html', dfd.resolve);
-  }).promise();
+  $('#contenedorMovimientos').load('movimientos.html');
+  $('#contenedorPagos').load('pagos.html');
+  $('#contenedorContacto').load('contacto.html');
+  $('#contenedorParking').load('parking.html');
+  $('#contenedorBuses').load('buses.html');
+  $('#contenedorNosotros').load('nosotros.html');
+  $('#contenedorModal').load('modal.html');
+  $('#contenedorWhitelist').load('whitelist.html');
+  $('#contenedorEmpresas').load('empresas.html');
+  $('#contenedorDestinos').load('destinos.html');
+  $('#contenedorConfig').load('config.html');
+  $('#contenedorPrivilegios').load('privilegios.html');  <!-- Nueva página -->
+  $('#contenedorEnrolar').load('enroll.html', dfd.resolve);
+}).promise();
 
   // Cargar el archivo main.js cuando todos los elementos existan
   $.when(loadPage).then(function() {
