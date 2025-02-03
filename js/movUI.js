@@ -17,6 +17,20 @@ var tableMov = $('#tableMov').DataTable({
 
 // Abrir Modales
 
+function cambiarFecha() {
+    const selectorFecha = document.getElementById('fechaSelector');
+    fechaSeleccionada = selectorFecha.value; // Actualizar la fecha seleccionada
+    refreshMov(); // Refrescar la tabla con la nueva fecha
+}
+
+// Nueva función para filtrar movimientos
+function filtrarMovimientos() {
+    const fechaFiltro = document.getElementById('fechaFiltro').value;  // Obtener la fecha seleccionada
+    if (fechaFiltro) {
+        refreshMov(fechaFiltro); // Llamar a refreshMov con la fecha filtrada
+    }
+}
+
 async function modalMovInsert(){
     const form = document.getElementById('formInsertMov');
     form.patente.value = '';
@@ -36,7 +50,7 @@ async function modalMovInsert(){
     openModal('movinsert');
 }
 
-async function refreshMov(){
+async function refreshMov(fecha = null){
     if(getCookie('jwt')){
         const refreshBtn = document.getElementById('btnRefreshMov');
         refreshBtn.disabled = true;
@@ -44,7 +58,7 @@ async function refreshMov(){
         refreshBtn.classList.add('fa-hourglass');
         refreshBtn.classList.add('disabled');
 
-        let data = await getMov();
+        let data = await getMov(fecha);  // Pasar la fecha como parámetro
 
         if(data){
             tableMov.clear();
@@ -67,86 +81,23 @@ async function refreshMov(){
     }
 }
 
-async function doInsertMov(e){
-    e.preventDefault();
-
-    const form = document.getElementById('formInsertMov');
-
-    if(!patRegEx.test(form.patente.value)) {
-        alert('Formatos de patente:\nABCD12\nABCD-12\nAB-CD-12');
-        return;
+async function getMov(fecha = null) {
+    let url = apiMovimientos;
+    if (fecha) {
+        url += `?fecha=${fecha}`; // Añadir el filtro de fecha a la URL
     }
-
-    form.btnSubmit.disabled = true;
-    form.btnSubmit.classList.add('disabled');
-
-    const dateNow = new Date();
-
-    datos = {
-        fecha: dateNow.toISOString().split('T')[0],
-        hora: `${dateNow.getHours()}:${dateNow.getMinutes()}:${dateNow.getSeconds()}`,
-        patente: form.patente.value,   // No se verifica si ya existe, se registra directamente
-        empresa: form.empresa.value,
-        tipo: form.tipo.value
-    };
-
-    // Aquí puedes enviar los datos sin preocuparte de la patente duplicada
-    let ret = await insertMov(datos);
-    if(ret['error']){
-        alert(ret['error']);
-    } else {
-        closeModal('movinsert');
-    }
-    form.btnSubmit.disabled = false;
-    form.btnSubmit.classList.remove('disabled');
-    refreshMov();
-}
-
-async function impMovimientos() {
-    const ventanaImpr = window.open('', '_blank');
-
-    ventanaImpr.document.write(`
-        <html>
-        <head>
-            <title>Movimientos</title>
-            <link rel="stylesheet" href="css/styles.css">
-        </head>
-        <body style="text-align:center; width: 1280px;">
-            <h1>Movimientos del Día</h1>
-            <table style="margin:auto;border:1px solid black;border-collapse:collapse">
-                <thead>
-                    <tr>
-                        <th>Ingreso</th>
-                        <th>Salida</th>
-                        <th>Patente</th>
-                        <th>Empresa</th>
-                        <th>Tipo</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `);
-
-    try {
-        const data = await getMov();
-
-        if (data) {
-            data.forEach(itm => {
-                ventanaImpr.document.write(`
-                    <tr>
-                        <td style="padding:5px">${itm['horaent']}</td>
-                        <td style="padding:5px">${itm['horasal']}</td>
-                        <td style="padding:5px">${itm['patente']}</td>
-                        <td style="padding:5px">${itm['empresa']}</td>
-                        <td style="padding:5px">${itm['tipo']}</td>
-                    </tr>
-                `);
-            });
-
-            ventanaImpr.document.write('</tbody></table>');
-            ventanaImpr.document.close();
-            ventanaImpr.print();
+    
+    let ret = await fetch(url, {
+        method: 'GET',
+        mode: 'cors',
+        headers: {
+            'Authorization' : `Bearer ${getCookie('jwt')}`
         }
-    } catch (error) {
-        console.error('Error:', error.message);
-    }
+    })
+    .then(reply => reply.json())
+    .then(data => { return data; })
+    .catch(error => { console.log(error); });
+    return ret;
 }
+
+// Aquí sigue el resto del código...

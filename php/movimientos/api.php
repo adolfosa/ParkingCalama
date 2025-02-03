@@ -28,9 +28,14 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') {
         exit;
     }
 
+    // Verifica si se pasó un parámetro de patente
     if(isset($_GET['patente'])){
         $patente = str_replace('-','',$_GET['patente']);
-        $stmt = $conn->prepare("SELECT m.idmov, m.fechaent, m.horaent, m.fechasal, m.horasal, m.patente, e.nombre AS empresa, m.tipo, m.valor FROM movParking as m JOIN empParking as e ON m.empresa = e.idemp WHERE m.patente = ? ORDER BY m.idmov DESC");
+        $stmt = $conn->prepare("SELECT m.idmov, m.fechaent, m.horaent, m.fechasal, m.horasal, m.patente, e.nombre AS empresa, m.tipo, m.valor 
+                                FROM movParking as m 
+                                JOIN empParking as e ON m.empresa = e.idemp 
+                                WHERE m.patente = ? 
+                                ORDER BY m.idmov DESC");
         $stmt->bind_param("s", $patente);
     
         try {
@@ -44,9 +49,15 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') {
         } catch (Exception $e) {
             echo json_encode(['error' => $e->getMessage()]);
         }
-    } else if(isset($_GET['id'])){
+    } 
+    // Verifica si se pasó un parámetro de id
+    else if(isset($_GET['id'])){
         $id = $_GET['id'];
-        $stmt = $conn->prepare("SELECT m.idmov, m.fechaent, m.horaent, m.fechasal, m.horasal, m.patente, e.nombre AS empresa, m.tipo, m.valor FROM movParking as m JOIN empParking as e ON m.empresa = e.idemp WHERE m.idmov = ? ORDER BY m.idmov");
+        $stmt = $conn->prepare("SELECT m.idmov, m.fechaent, m.horaent, m.fechasal, m.horasal, m.patente, e.nombre AS empresa, m.tipo, m.valor 
+                                FROM movParking as m 
+                                JOIN empParking as e ON m.empresa = e.idemp 
+                                WHERE m.idmov = ? 
+                                ORDER BY m.idmov");
         $stmt->bind_param("i", $id);
     
         try {
@@ -59,8 +70,26 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') {
         } catch (Exception $e) {
             echo json_encode(['error' => $e->getMessage()]);
         }
-    } else {
-        $stmt = $conn->prepare("SELECT m.idmov, m.fechaent, m.horaent, m.fechasal, m.horasal, m.patente, e.nombre AS empresa, m.tipo, m.valor FROM movParking as m JOIN empParking as e ON m.empresa = e.idemp ORDER BY m.idmov");
+    } 
+    // Si no se pasó un parámetro específico, obtenemos todos los movimientos
+    else {
+        // Verificar si se pasó un parámetro de fecha
+        if(isset($_GET['fecha'])){
+            $fecha = $_GET['fecha']; // Recibimos el parámetro de fecha
+            $stmt = $conn->prepare("SELECT m.idmov, m.fechaent, m.horaent, m.fechasal, m.horasal, m.patente, e.nombre AS empresa, m.tipo, m.valor 
+                                    FROM movParking as m 
+                                    JOIN empParking as e ON m.empresa = e.idemp 
+                                    WHERE DATE(m.fechaent) = ? 
+                                    ORDER BY m.idmov");
+            $stmt->bind_param("s", $fecha); // Usamos el parámetro de fecha en la consulta
+        } else {
+            // Si no se pasó una fecha, traemos todos los movimientos
+            $stmt = $conn->prepare("SELECT m.idmov, m.fechaent, m.horaent, m.fechasal, m.horasal, m.patente, e.nombre AS empresa, m.tipo, m.valor 
+                                    FROM movParking as m 
+                                    JOIN empParking as e ON m.empresa = e.idemp 
+                                    ORDER BY m.idmov");
+        }
+
         try {
             $stmt->execute();
             $result = $stmt->get_result();
@@ -73,6 +102,7 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') {
         }
     }
 }
+
 
 // Insert
 else if($_SERVER['REQUEST_METHOD'] == 'POST') {
