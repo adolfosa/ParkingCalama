@@ -28,15 +28,18 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') {
         exit;
     }
 
-    // Verifica si se pasó un parámetro de patente
-    if(isset($_GET['patente'])){
-        $patente = str_replace('-','',$_GET['patente']);
-        $stmt = $conn->prepare("SELECT m.idmov, m.fechaent, m.horaent, m.fechasal, m.horasal, m.patente, e.nombre AS empresa, m.tipo, m.valor 
-                                FROM movParking as m 
-                                JOIN empParking as e ON m.empresa = e.idemp 
+    // Filtrar por patente
+    if (isset($_GET['patente'])) {
+        $patente = str_replace('-', '', $_GET['patente']);
+        $stmt = $conn->prepare("SELECT m.idmov, m.fechaent, m.horaent, m.fechasal, m.horasal, m.patente, 
+                                       IFNULL(e.nombre, 'No especifica') AS empresa, m.tipo, m.valor 
+                                FROM movParking AS m 
+                                LEFT JOIN empParking AS e ON m.empresa = e.idemp 
                                 WHERE m.patente = ? 
                                 ORDER BY m.idmov DESC");
+
         $stmt->bind_param("s", $patente);
+
     
         try {
             $stmt->execute();

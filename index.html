@@ -25,7 +25,7 @@
   <a href="#" onclick="nosotros()">Nosotros</a>
   <a href="#" id="nbUsrParking" onclick="parking()">Parking</a>
   <a href="#" id="nbUsrbuses" onclick="buses()">Andenes</a>
-  <a href="#" id="nbPrivilegios" onclick="privilegios()">Privilegios</a> <!-- Nuevo botón -->
+  
 </div>
 
 
@@ -60,7 +60,6 @@
     <div id="contenedorParking"></div>
     <div id="contenedorNosotros"></div>
     <div id="contenedorContacto"></div>
-    <div id="contenedorPrivilegios"></div>
     <div id="contenedorMovimientos"></div>
     <div id="contenedorEmpresas"></div>
     <div id="contenedorDestinos"></div>
@@ -170,7 +169,6 @@
   $('#contenedorEmpresas').load('empresas.html');
   $('#contenedorDestinos').load('destinos.html');
   $('#contenedorConfig').load('config.html');
-  $('#contenedorPrivilegios').load('privilegios.html');  <!-- Nueva página -->
   $('#contenedorEnrolar').load('enroll.html', dfd.resolve);
 }).promise();
 
